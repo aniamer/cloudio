@@ -5,11 +5,13 @@ import (
 	"context"
 	"io/ioutil"
 	"os"
+	"time"
 )
 
 type FileIO interface {
 	Read (obj string,ctx context.Context) ([]byte, error)
 	Write (obj string, payload []byte, ctx context.Context) error
+	Update(obj string, ctx context.Context) error
 }
 
 type GcsIO struct {
@@ -39,6 +41,15 @@ func (lio *LocalIO) Read(obj string, ctx context.Context) ([]byte, error) {
 	return buf, nil
 }
 
+func (gio *LocalIO) Update(obj string, ctx context.Context) error {
+	currentTime := time.Now().Local()
+	err := os.Chtimes(obj, currentTime, currentTime)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (gio *GcsIO) Write(obj string, payload []byte,ctx context.Context) error {
 	writer := gio.BucketHandle.Object(obj).NewWriter(ctx)
 	defer writer.Close()
@@ -60,4 +71,15 @@ func (gio *GcsIO) Read(obj string, ctx context.Context) ([]byte, error) {
 	}
 
 	return buf, nil
+}
+
+func (gio *GcsIO) Touch(obj string, ctx context.Context) error {
+	currentTime := time.Now().Local()
+	attrsToUpdate := storage.ObjectAttrsToUpdate{CustomTime: currentTime}
+	_, err := gio.BucketHandle.Object(obj).Update(ctx, attrsToUpdate)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
