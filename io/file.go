@@ -73,7 +73,7 @@ func (gio *GcsIO) Read(obj string, ctx context.Context) ([]byte, error) {
 	return buf, nil
 }
 
-func (gio *GcsIO) Touch(obj string, ctx context.Context) error {
+func (gio *GcsIO) Update(obj string, ctx context.Context) error {
 	currentTime := time.Now().Local()
 	attrsToUpdate := storage.ObjectAttrsToUpdate{CustomTime: currentTime}
 	_, err := gio.BucketHandle.Object(obj).Update(ctx, attrsToUpdate)
